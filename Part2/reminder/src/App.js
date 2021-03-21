@@ -1,9 +1,10 @@
 import React from 'react';
+import axios from 'axios';
 
 const Reminder = (props) => {
     return (
         <div>
-            <li> {new Date(props.reminder.timestamp).toLocaleString()} {props.reminder.name}</li>
+            <li> {new Date(props.reminder.timestamp).toLocaleString()} {props.reminder.name} <button onClick={event => props.deleteReminder(event, props.reminder.id, props.reminder.name)}>Delete</button> </li> 
         </div>
     )
 }
@@ -31,15 +32,18 @@ class App extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      reminders: [
-        {
-          name: 'Buy some eggs',
-          timestamp: "2018-11-10T13:00:00.141Z"
-        }
-      ],
+      reminders: [],
       newName: '',
       newTimestamp: ''
     }
+  }
+
+  componentDidMount() {
+    axios
+        .get('http://localhost:3001/reminders')
+        .then(response => {
+            this.setState({reminders: response.data})
+        })
   }
 
   handleNameChange = (event) => {
@@ -50,6 +54,15 @@ class App extends React.Component {
     this.setState({newTimestamp: event.target.value})
   }
 
+  deleteReminder = (event, id, name) => {
+    if (window.confirm("Are you sure you want to remove reminder: " + name))
+    axios
+        .delete('http://localhost:3001/reminders/' + id)
+        .then(response => {
+            this.setState({reminders: this.state.reminders.filter(reminder => reminder.id !== id)})
+        })
+  }
+
   addReminder = (event) => {
     event.preventDefault()
     if (!this.state.reminders.map(reminder => reminder.name).includes(this.state.newName)) {
@@ -57,12 +70,15 @@ class App extends React.Component {
             name: this.state.newName,
             timestamp: this.state.newTimestamp
         }
-        const reminders = this.state.reminders.concat(reminder)
-        this.setState({
-            reminders: reminders,
-            newName: '',
-            newTimestamp: ''
-        })
+        axios
+            .post('http://localhost:3001/reminders', reminder)
+            .then(response => {
+                this.setState({
+                    reminders: this.state.reminders.concat(response.data),
+                    newName: '',
+                    newTimestamp: ''
+                })
+            })
     } else {
         alert("Reminder '" + this.state.newName + "' already exists.")
     }
@@ -73,7 +89,7 @@ class App extends React.Component {
       <div>
         <Form addReminder={this.addReminder} state={this.state} handleNameChange={this.handleNameChange} handleDateTimeChange={this.handleDateTimeChange}/>
         <h2>Reminders:</h2>
-        {this.state.reminders.map(reminder => <Reminder reminder={reminder} key={reminder.name}/>)}
+        {this.state.reminders.map(reminder => <Reminder reminder={reminder} key={reminder.name} deleteReminder={this.deleteReminder}/>)}
       </div>
     )
   }
