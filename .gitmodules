@@ -1,0 +1,3 @@
+[submodule "Part3/reminder-backend"]
+	path = Part3/reminder-backend
+	url = https://github.com/arttuhuttunen/WebAndMobile21-reminder
